@@ -226,7 +226,7 @@
     （两版记录取标签核对对象，即新版配方）的<b>最终过敏原集合</b>；为涉及的每种过敏原配置
     清洁分钟数后，按「前一产品含有、后一产品不含」计算<b>有向换线成本</b>，以子集动态规划求
     <b>总清洁时间最短</b>的完整生产顺序（并列时按产品 ID 序列取最小）。处于「需复核」状态的
-    记录<b>禁止参与</b>（原因见列表），请先在「⑪ 历史审查记录」完成字典时效复核。
+    记录<b>禁止参与</b>（原因见列表），请先在「⑫ 历史审查记录」完成字典时效复核。
     本预览<b>不会</b>改写任何审查记录。</p>
   <div id="changeover-products"><p class="hint">加载中…</p></div>
   <div id="changeover-minutes-wrap" class="hidden">
@@ -247,7 +247,7 @@
     模板内容 = 组内产品过敏原<b>并集</b>，每个产品的<b>附加声明</b>为「模板含有而自身没有」的过敏原，
     仅当组内每个产品的附加声明数都不超过其上限时该组才成立。后端用<b>子集动态规划</b>求
     <b>模板数量最少</b>的完整分组，并列时按组内及组间产品 ID 序列取唯一最小者。缺失或
-    「需复核」记录<b>禁止参与</b>（原因见列表），请先在「⑪ 历史审查记录」完成字典时效复核。
+    「需复核」记录<b>禁止参与</b>（原因见列表），请先在「⑫ 历史审查记录」完成字典时效复核。
     本预览<b>不会</b>改写任何审查记录。</p>
   <div id="tpl-products"><p class="hint">加载中…</p></div>
   <div id="tpl-limits-wrap" class="hidden">
@@ -268,7 +268,7 @@
     请按<b>完整节点路径</b>为可替换的配料填写替换成本，<b>未填写的节点视为不可替换</b>。后端在
     候选树上用<b>树形动态规划</b>求覆盖全部来源路径的<b>最低总成本</b>节点集合：选择祖先即同时
     阻断其子树，方案不再选其后代；同成本按节点路径序列字典序取最小。处于「需复核」状态的记录
-    <b>禁止选择</b>（原因见列表），请先在「⑪ 历史审查记录」完成字典时效复核。
+    <b>禁止选择</b>（原因见列表），请先在「⑫ 历史审查记录」完成字典时效复核。
     本预览<b>不会</b>改写任何审查记录。</p>
   <div id="ref-records"><p class="hint">加载中…</p></div>
   <div id="ref-setup-wrap" class="hidden">
@@ -303,7 +303,7 @@
     可留空），后端用<b>精确小数</b>比价、以<b>子集动态规划</b>求<b>总价最低</b>的套餐组合；
     同价按<b>套餐名序列字典序</b>展示唯一方案并统计并列组合数（覆盖至少一个必须项的 0 元套餐，
     即使加入后不新增覆盖也作为不同并列计入；正价冗余不进入最低价），无法全覆盖时列出<b>覆盖缺口</b>。
-    处于「需复核」状态的记录<b>禁止选择</b>（原因见列表），请先在「⑪ 历史审查记录」完成字典时效复核。
+    处于「需复核」状态的记录<b>禁止选择</b>（原因见列表），请先在「⑫ 历史审查记录」完成字典时效复核。
     本预览<b>不会</b>写库，也不改写任何审查记录。</p>
   <div id="panel-records"><p class="hint">加载中…</p></div>
   <div id="panel-setup-wrap" class="hidden">
@@ -320,8 +320,34 @@
   <div id="panel-result"></div>
 </section>
 
+<section>
+  <h2>⑩ 池化检测阳性溯源 <span class="pill gray">临时预览</span></h2>
+  <p class="hint">从历史审查记录中<b>仅选择一条时效正常</b>的记录：系统读取该记录<b>当前配方</b>
+    （两版记录取标签核对对象，即新版配方）的<b>叶子原料</b>（配料树中不再展开的原料）。
+    逐行录入池化检测结果 <code>池名：原料列表：阳性/阴性</code>（冒号中英文均可，原料逗号 / 顿号分隔）：
+    <b>阴性池</b>排除其全部原料；<b>阳性池</b>必须至少含一个未被阴性证据排除的嫌疑原料，否则判定<b>无解</b>。
+    后端以<b>子集动态规划（命中集）</b>求能解释全部阳性池的<b>最少嫌疑原料集合</b>，统计全部并列解并按
+    <b>原料名序列字典序</b>展示唯一最小解，同时列出每个嫌疑原料解释的阳性池。
+    池引用<b>非配方叶子原料</b>、池名重名或状态非法时<b>整批拒绝</b>并逐行定位。
+    处于「需复核」状态的记录<b>禁止选择</b>（原因见列表），请先在「⑫ 历史审查记录」完成字典时效复核。
+    本预览<b>不会</b>写库，也不改写任何审查记录。</p>
+  <div id="pool-records"><p class="hint">加载中…</p></div>
+  <div id="pool-setup-wrap" class="hidden">
+    <p id="pool-leaves"></p>
+    <label>检测池录入（每行「池名：原料列表：阳性/阴性」，# 注释 / 空行忽略；池名不可重复，原料必须是上方叶子原料）</label>
+    <textarea id="pool-lines" rows="6"
+      placeholder="阴性对照池：可可脂，食盐：阴性&#10;一混池：乳清粉，可可脂：阳性&#10;二混池：大豆卵磷脂，食盐：阳性"></textarea>
+    <div class="toolbar">
+      <button onclick="submitPoolTrace()">计算最少嫌疑原料集合</button>
+      <button class="ghost" onclick="fillPoolDemo()">填充溯源示例</button>
+      <span id="pool-msg" class="error"></span>
+    </div>
+  </div>
+  <div id="pool-result"></div>
+</section>
+
 <section id="result-section" class="hidden">
-  <h2>⑩ 审查结果 <span id="result-title" class="hint"></span></h2>
+  <h2>⑪ 审查结果 <span id="result-title" class="hint"></span></h2>
   <div id="recheck-bar"></div>
   <div id="recheck-panel" class="recheck-panel hidden"></div>
   <div id="result-body"></div>
@@ -332,12 +358,12 @@
 </section>
 
 <section>
-  <h2>⑪ 历史审查记录</h2>
+  <h2>⑫ 历史审查记录</h2>
   <div id="history-table"><p class="hint">暂无记录</p></div>
 </section>
 
 <section>
-  <h2>⑫ 审查数据迁移包</h2>
+  <h2>⑬ 审查数据迁移包</h2>
   <p class="hint">把字典、原料别名与全部审查记录打包为一个 JSON 迁移包：含格式版本号与按规范化内容
     计算的 SHA-256 摘要，同一数据库重复导出内容稳定（摘要一致）。导入先做<b>只读预检</b>——逐项校验
     版本 / 摘要 / 字段类型 / 别名图无环 / 审查记录结构，<b>不会写库</b>；预检通过后凭
@@ -672,6 +698,7 @@ async function loadHistory() {
     await loadTemplateProducts();    // 模板分组候选列表同步刷新
     await loadReformulationRecords();  // 最小改配候选记录同步刷新
     await loadPanelRecords();       // 套餐规划候选记录同步刷新
+    await loadPoolRecords();        // 阳性溯源候选记录同步刷新
     return;
   }
   const rows = reviews.map(r => {
@@ -701,6 +728,7 @@ async function loadHistory() {
   await loadTemplateProducts();    // 模板分组候选列表同步刷新
   await loadReformulationRecords();  // 最小改配候选记录同步刷新
   await loadPanelRecords();        // 套餐规划候选记录同步刷新
+  await loadPoolRecords();         // 阳性溯源候选记录同步刷新
 }
 
 async function viewReview(id) {
@@ -1789,6 +1817,204 @@ function fillPanelDemo() {
     + '尊享全包：30.00：麸质谷物，乳，大豆，蛋类，坚果，芝麻\n'
     + '鱼贝类单项：8.00：鱼类，甲壳类';
   $('panel-msg').textContent = '示例已填充：选择一条含乳/大豆/蛋类/麸质谷物的记录后计算，可看到精确比价与覆盖贡献';
+}
+
+/* ---------- 池化检测阳性溯源（临时预览） ---------- */
+let poolRecords = [];
+let poolSelectedId = null;
+
+async function loadPoolRecords() {
+  try {
+    const d = await api('/api/pool-trace/records');
+    poolRecords = d.records;
+    renderPoolRecords();
+  } catch (e) {
+    $('pool-records').innerHTML =
+      `<p class="error">候选记录加载失败：${esc(e.message)}</p>`;
+  }
+}
+
+function renderPoolRecords() {
+  const wrap = $('pool-records');
+  if (!poolRecords.length) {
+    wrap.innerHTML = '<p class="hint">暂无历史审查记录，请先在「③ 新建标签审查」创建。</p>';
+    poolSelectedId = null;
+    renderPoolSetup();
+    return;
+  }
+  // 选中记录被删除或转为需复核后清空选择
+  if (!poolRecords.some(r => r.id === poolSelectedId && r.eligible)) {
+    poolSelectedId = null;
+  }
+  const rows = poolRecords.map(r => {
+    const leafCount = r.leaf_ingredients.length;
+    const leaves = leafCount
+      ? r.leaf_ingredients.map(a => `<span class="badge">${esc(a)}</span>`).join('')
+      : '<span class="hint">无叶子原料</span>';
+    const rb = r.eligible
+      ? `<input type="radio" name="pool-record" value="${r.id}" ${poolSelectedId === r.id ? 'checked' : ''} onchange="onPoolSelect()">`
+      : `<input type="radio" disabled title="${esc(r.blocked_reason)}">`;
+    const state = r.eligible
+      ? '<span class="pill green" title="字典时效正常">可选择</span>'
+      : `<span class="pill orange" title="${esc(r.blocked_reason)}">禁止选择</span>`;
+    const note = r.eligible ? '' : `<div class="warn">⚠ ${esc(r.blocked_reason)}</div>`;
+    return `<tr><td>${rb}</td><td>#${r.id}</td><td>${esc(r.name)}${note}</td>
+      <td class="hint">${esc(r.source_version)}</td><td>${leaves}
+      <div class="hint">共 ${leafCount} 种叶子原料</div></td><td>${state}</td></tr>`;
+  }).join('');
+  wrap.innerHTML = `<table><tr><th style="width:40px">选择</th><th style="width:3.5em">ID</th>
+    <th>审查记录</th><th style="width:6.5em">取值版本</th><th>当前配方叶子原料（池仅可引用这些原料）</th>
+    <th style="width:5.5em">状态</th></tr>${rows}</table>
+    <p class="hint">仅可单选 <b>1 条</b>时效正常记录；叶子原料取配料树中不再展开的节点，同名原料按去空白大小写归一匹配。</p>`;
+  renderPoolSetup();
+}
+
+function onPoolSelect() {
+  const checked = document.querySelector('#pool-records input[name=pool-record]:checked');
+  poolSelectedId = checked ? Number(checked.value) : null;
+  // 切换记录后清空结果
+  $('pool-result').innerHTML = '';
+  $('pool-msg').textContent = '';
+  renderPoolSetup();
+}
+
+function selectedPoolRecord() {
+  return poolRecords.find(r => r.id === poolSelectedId && r.eligible) || null;
+}
+
+function renderPoolSetup() {
+  const wrap = $('pool-setup-wrap');
+  const r = selectedPoolRecord();
+  if (!r) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  const leaves = r.leaf_ingredients.length
+    ? r.leaf_ingredients.map(a => `<span class="badge own">${esc(a)}</span>`).join('')
+    : '<span class="hint">无叶子原料</span>';
+  $('pool-leaves').innerHTML =
+    `「<b>${esc(r.name)}</b>」（#${r.id}，取值版本：${esc(r.source_version)}）当前配方叶子原料：${leaves}`;
+}
+
+async function submitPoolTrace() {
+  $('pool-msg').textContent = '';
+  $('pool-result').innerHTML = '';
+  if (!poolSelectedId) {
+    $('pool-msg').textContent = '请先选择一条时效正常的记录';
+    return;
+  }
+  if (!$('pool-lines').value.trim()) {
+    $('pool-msg').textContent = '请逐行录入检测池（池名：原料列表：阳性/阴性）';
+    return;
+  }
+  try {
+    const r = await post('/api/pool-trace-preview',
+      {review_id: poolSelectedId, pools_text: $('pool-lines').value});
+    renderPoolResult(r);
+  } catch (e) {
+    $('pool-msg').textContent = e.message;
+    const problems = (e.detail && e.detail.problems) || [];
+    const lineProblems = problems.filter(p => typeof p.line === 'number');
+    const recProblems = problems.filter(p => typeof p.id !== 'undefined');
+    let html = '';
+    if (recProblems.length) {
+      html += `<div class="result-block"><h3>禁止选择的记录</h3>
+        <table><tr><th style="width:4em">ID</th><th>记录</th><th>原因</th></tr>
+        ${recProblems.map(p => `<tr><td>#${esc(String(p.id))}</td>
+          <td>${esc(p.name || '（未知）')}</td>
+          <td class="error">${esc(p.message)}</td></tr>`).join('')}</table></div>`;
+    }
+    if (lineProblems.length) {
+      html += `<div class="result-block"><h3>检测池录入有误
+          <span class="pill red">${lineProblems.length} 行</span></h3>
+        <table><tr><th style="width:5em">行号</th><th>问题</th></tr>
+        ${lineProblems.map(p => `<tr><td>第 ${p.line} 行</td>
+          <td class="error">${esc(p.message)}</td></tr>`).join('')}</table>
+        <p class="hint">整批未参与计算，修正全部问题后重试。</p></div>`;
+    }
+    $('pool-result').innerHTML = html;
+    if (recProblems.length) await loadPoolRecords();  // 刷新资格状态（记录可能刚被删除 / 转需复核）
+  }
+}
+
+function poolBadges(arr, cls) {
+  return arr.length
+    ? arr.map(a => `<span class="badge ${cls || ''}">${esc(a)}</span>`).join('')
+    : '<span class="hint">无</span>';
+}
+
+function renderPoolResult(r) {
+  let head = `<div class="result-block">
+    <h3>记录叶子原料（${esc(r.review.name)} #${r.review.id} · ${esc(r.review.source_version)}）</h3>
+    <p>${poolBadges(r.review.leaf_ingredients, 'own')}</p></div>`;
+
+  const poolRows = r.pools.map(p => {
+    const st = p.positive
+      ? '<span class="pill red">阳性</span>'
+      : '<span class="pill blue">阴性</span>';
+    const cls = p.positive ? 'miss' : 'over';
+    return `<tr><td>${esc(p.name)}</td><td>${st}</td>
+      <td>${poolBadges(p.ingredients, cls)}</td></tr>`;
+  }).join('');
+  head += `<div class="result-block"><h3>录入检测池（共 ${r.pools.length} 个，
+      阳性 ${r.positive_pools.length} · 阴性 ${r.negative_pools.length}）</h3>
+    <table><tr><th style="width:20%">池名</th><th style="width:5em">状态</th><th>池内原料</th></tr>
+    ${poolRows}</table>
+    <p class="hint">阴性证据排除的原料：${poolBadges(r.excluded_ingredients, 'over')}</p></div>`;
+
+  if (!r.feasible) {
+    const rows = r.conflict_pools.map(c => `<tr><td><b>${esc(c.name)}</b></td>
+      <td>${poolBadges(c.ingredients)}</td>
+      <td>${poolBadges(c.excluded_ingredients, 'over')}</td></tr>`).join('');
+    head += `<div class="result-block">
+      <h3>无解 <span class="pill red">冲突阳性池 ${r.conflict_pools.length} 个</span></h3>
+      <p class="error">下列阳性池的原料已被阴性证据完全排除，没有任何嫌疑原料可以解释其阳性结果：</p>
+      <table><tr><th style="width:18%">阳性池</th><th>池内原料</th><th>被阴性证据排除的原料</th></tr>
+      ${rows}</table>
+      <p class="hint">请复核池内原料或阴性结果后重新计算。</p></div>`;
+    $('pool-result').innerHTML = head;
+    $('pool-result').scrollIntoView({behavior: 'smooth'});
+    return;
+  }
+
+  const tie = r.optimal_count > 1
+    ? `<p class="hint">共有 ${r.optimal_count} 个并列的最少嫌疑原料集合（均为 ${r.minimum_size} 种原料），
+      已按原料名序列字典序展示唯一确定者。</p>`
+    : `<p class="hint">最少嫌疑集合唯一（共 ${r.minimum_size} 种原料）。</p>`;
+
+  if (r.minimum_size === 0) {
+    head += `<div class="result-block">
+      <h3>溯源结论 <span class="pill green">无需嫌疑原料</span></h3>
+      <p>本批没有阳性池（${r.negative_pools.length ? '仅录入了阴性池，其原料已排除' : '录入内容为空'}），
+      空集合即解释全部检测结果。</p></div>`;
+    $('pool-result').innerHTML = head;
+    $('pool-result').scrollIntoView({behavior: 'smooth'});
+    return;
+  }
+
+  const suspectRows = r.suspects.map((s, i) => `<tr><td>${i + 1}</td>
+    <td><b>${esc(s.ingredient)}</b></td><td>${s.explains_count}</td>
+    <td>${s.explains_pools.map(p => `<span class="badge miss">${esc(p)}</span>`).join('')}</td></tr>`).join('');
+  const names = r.suspects.map(s => `<b>${esc(s.ingredient)}</b>`)
+    .join(' <span class="src-arrow">+</span> ');
+  head += `<div class="result-block">
+    <h3>最少嫌疑原料集合 <span class="pill green">${r.minimum_size} 种原料</span>
+      <span class="pill blue">并列解 ${r.optimal_count} 个</span></h3>
+    <p>${names}</p>${tie}
+    <table><tr><th style="width:3em">序号</th><th style="width:20%">嫌疑原料</th>
+      <th style="width:7em">解释阳性池数</th><th>各自解释的阳性池</th></tr>${suspectRows}</table>
+    <p class="hint">阴性池已排除其全部原料；每个阳性池至少被集合中的一种嫌疑原料命中。
+    本结果仅为预览，检测池与审查记录均未写库。</p></div>`;
+  $('pool-result').innerHTML = head;
+  $('pool-result').scrollIntoView({behavior: 'smooth'});
+}
+
+function fillPoolDemo() {
+  $('pool-lines').value =
+    '# 阴性对照池先排除明确无问题的原料\n'
+    + '阴性对照池：可可脂，食盐：阴性\n'
+    + '一混池：乳清粉，可可脂：阳性\n'
+    + '二混池：大豆卵磷脂，食盐：阳性\n'
+    + '三混池：鸡蛋，白砂糖：阳性'
+  $('pool-msg').textContent = '示例已填充：选择一条含乳清粉/大豆卵磷脂/鸡蛋/白砂糖等叶子原料的记录后计算';
 }
 
 /* ---------- 审查数据迁移包 ---------- */

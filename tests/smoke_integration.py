@@ -602,7 +602,82 @@ assert db.get_review(panel_rid) == before_panel
 assert db.get_review(milk_rid) == before_milk
 print("12. 过敏原检测套餐规划（当前配方必须项/精确小数/子集DP/字典序并列/缺口/禁止选择/只读） OK")
 
-# 13. 审查数据迁移包（导出 / 只读预检 / 一次性令牌确认导入 / 事务回滚）
+# 13. 池化检测阳性溯源（临时预览，不改写审查记录）
+from app.pool_trace import (PoolTraceError, build_pool_trace_preview,
+                            list_trace_records)
+
+# 13a. 候选清单：只取当前配方叶子原料；两版记录取新版；需复核记录禁止选择
+trace_recs = {r["id"]: r for r in list_trace_records()}
+assert trace_recs[milk_rid]["eligible"]
+assert trace_recs[milk_rid]["leaf_ingredients"] == ["可可脂", "乳清粉", "乳糖"]
+assert trace_recs[panel_rid]["source_version"] == "新版配方"
+assert trace_recs[panel_rid]["leaf_ingredients"] == \
+    ["小麦粉", "白砂糖", "可可脂", "椰子粉", "鸡蛋", "芝麻", "食盐"]
+assert trace_recs[rid]["eligible"] is False and "需复核" in trace_recs[rid]["blocked_reason"]
+
+# 13b. 基本溯源：阴性池排除可可脂，两个阳性池分别只剩乳清粉 / 乳糖
+before_panel = db.get_review(panel_rid)
+before_milk = db.get_review(milk_rid)
+trace = build_pool_trace_preview(milk_rid, """\
+阴性对照：可可脂：阴性
+一混：乳清粉，可可脂：阳性
+二混：乳糖，可可脂：阳性
+""")
+assert trace["feasible"] and trace["minimum_size"] == 2
+assert trace["optimal_count"] == 1
+assert [s["ingredient"] for s in trace["suspects"]] == ["乳清粉", "乳糖"]
+explained = {s["ingredient"]: s["explains_pools"] for s in trace["suspects"]}
+assert explained["乳清粉"] == ["一混"] and explained["乳糖"] == ["二混"]
+assert trace["excluded_ingredients"] == ["可可脂"]
+
+# 13c. 三个阳性池两两共享三种原料：任一 2 元集都能命中全部 → 3 个并列，
+#      原料名序列字典序取（椰子粉, 芝麻）（椰 U+6930 < 芝 U+829D < 鸡 U+9E21）
+trace = build_pool_trace_preview(panel_rid, """\
+P1：椰子粉，芝麻：阳性
+P2：椰子粉，鸡蛋：阳性
+P3：芝麻，鸡蛋：阳性
+""")
+assert trace["feasible"] and trace["minimum_size"] == 2
+assert trace["optimal_count"] == 3
+assert [s["ingredient"] for s in trace["suspects"]] == ["椰子粉", "芝麻"]
+hit = {s["ingredient"]: set(s["explains_pools"]) for s in trace["suspects"]}
+assert hit["椰子粉"] == {"P1", "P2"} and hit["芝麻"] == {"P1", "P3"}
+
+# 13d. 阳性池被阴性证据完全排除 → 无解并给出冲突池
+trace = build_pool_trace_preview(
+    milk_rid, "N：乳清粉：阴性\nP：乳清粉：阳性")
+assert not trace["feasible"]
+assert [c["name"] for c in trace["conflict_pools"]] == ["P"]
+assert trace["conflict_pools"][0]["excluded_ingredients"] == ["乳清粉"]
+
+# 13e. 非配方叶子原料（奶粉是复合配料）/ 重名 / 状态非法整批拒绝并定位行
+try:
+    build_pool_trace_preview(
+        milk_rid, "P：奶粉：阳性\nP：乳糖：阳性\nQ：乳糖：可疑")
+    raise AssertionError("非法池行应被整批拒绝")
+except PoolTraceError as exc:
+    assert [(p["line"], p["type"]) for p in exc.problems] == [
+        (1, "unknown_ingredient"), (2, "duplicate_name"), (3, "bad_status")]
+
+# 13f. 需复核 / 缺失记录拒绝并逐条指出原因
+try:
+    build_pool_trace_preview(rid, "P：椰子粉：阳性")
+    raise AssertionError("需复核记录应被拒绝")
+except PoolTraceError as exc:
+    assert exc.problems[0]["reason"] == "stale" and "需复核" in exc.problems[0]["message"]
+try:
+    build_pool_trace_preview(999999, "P：乳糖：阳性")
+    raise AssertionError("缺失记录应被拒绝")
+except PoolTraceError as exc:
+    assert exc.problems[0]["reason"] == "missing"
+
+# 13g. 只读：记录内容不变、记录数不增加（本节复用既有记录）
+assert db.get_review(panel_rid) == before_panel
+assert db.get_review(milk_rid) == before_milk
+assert len(db.list_reviews()) == 6
+print("13. 池化检测阳性溯源（叶子原料/阴性排除/冲突池/最小命中集DP/字典序并列/整批拒绝/禁止选择/只读） OK")
+
+# 14. 审查数据迁移包（导出 / 只读预检 / 一次性令牌确认导入 / 事务回滚）
 import json as _json
 
 from app.migration import (MigrationConfirmError, build_export, confirm_import,
@@ -664,6 +739,6 @@ except MigrationConfirmError:
 # 往返稳定：再导出摘要与原始一致；记录数不变
 assert build_export()["sha256"] == pkg_a["sha256"]
 assert len(db.list_reviews()) == 6
-print("13. 审查数据迁移包（导出稳定/规范化摘要/只读预检/逐项问题/一次性令牌/整体替换/往返一致） OK")
+print("14. 审查数据迁移包（导出稳定/规范化摘要/只读预检/逐项问题/一次性令牌/整体替换/往返一致） OK")
 
 print("\n全部集成冒烟测试通过 ✔")

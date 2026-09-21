@@ -9,8 +9,8 @@
 - 支持两版配方对比，输出过敏原变化；
 - 生成并导出标签审查报告（HTML / Markdown）；
 - 临时预览工具：供应商方案风险区间、配料占比区间顺序校验、共线生产换线
-  排程、共用标签模板分组、目标过敏原最小改配方案、过敏原检测套餐规划
-  （只读，不写历史、不改写审查记录）。
+  排程、共用标签模板分组、目标过敏原最小改配方案、过敏原检测套餐规划、
+  池化检测阳性溯源（只读，不写历史、不改写审查记录）。
 """
 from __future__ import annotations
 
@@ -32,6 +32,8 @@ from .changeover import (ChangeoverError, build_changeover_preview,
 from .migration import (MigrationConfirmError, build_export, confirm_import,
                         precheck_package)
 from .parser import parse_recipe
+from .pool_trace import (PoolTraceError, build_pool_trace_preview,
+                         list_trace_records)
 from .proportion import analyze_proportions
 from .recheck import build_recheck
 from .reformulation import (ReformulationError, build_reformulation_plan,
@@ -135,6 +137,11 @@ class ReformulationPreview(BaseModel):
 class PanelPreview(BaseModel):
     review_id: int
     packages_text: str = ""
+
+
+class PoolTracePreview(BaseModel):
+    review_id: int
+    pools_text: str = ""
 
 
 class MigrationPrecheckRequest(BaseModel):
@@ -426,6 +433,39 @@ def allergen_panel_preview(payload: PanelPreview):
     try:
         return build_panel_preview(payload.review_id, payload.packages_text)
     except PanelError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": str(exc), "problems": exc.problems})
+
+
+# ---------- 池化检测阳性溯源（临时预览） ----------
+
+@app.get("/api/pool-trace/records")
+def pool_trace_records():
+    """阳性溯源候选记录清单。
+
+    仅允许选择**一条时效正常**记录：每条历史记录给出当前配方（两版记录
+    取标签核对对象，即新版配方）的叶子原料列表与选择资格；处于需复核
+    状态的记录标记为禁止选择并附原因。只读。
+    """
+    return {"records": list_trace_records()}
+
+
+@app.post("/api/pool-trace-preview")
+def pool_trace_preview(payload: PoolTracePreview):
+    """池化检测阳性溯源（临时预览）。
+
+    仅接入一条时效正常历史审查记录，读取其当前配方的**叶子原料**；用户
+    逐行录入 ``池名：原料列表：阳性/阴性``，阴性池排除其全部原料，阳性
+    池须至少含一个未被排除的嫌疑原料；后端用子集动态规划（命中集）求能
+    解释全部阳性池的**最少嫌疑原料集合**，统计全部并列解并按原料名序列
+    字典序展示唯一最小解，同时列出每个嫌疑原料解释的阳性池；阳性池被
+    阴性证据完全排除时返回无解及冲突池。池引用非配方叶子原料、池名重名
+    或状态非法时整批拒绝并逐行定位。只读计算，不写任何数据。
+    """
+    try:
+        return build_pool_trace_preview(payload.review_id, payload.pools_text)
+    except PoolTraceError as exc:
         raise HTTPException(
             status_code=400,
             detail={"message": str(exc), "problems": exc.problems})
